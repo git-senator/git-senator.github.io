@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self';">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
 <title>SENATOR // RED TEAM AI SECURITY</title>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -576,14 +579,14 @@ footer b{color:var(--red)}
     <div class="sec-line"></div>
   </div>
   <div class="contact-grid">
-    <a href="mailto:senator.cardinala@gmail.com" class="c-card reveal">
+    <a id="em-link" class="c-card reveal">
       <div class="corner tl"></div><div class="corner tr"></div>
       <div class="corner bl"></div><div class="corner br"></div>
       <div class="c-icon">✉</div>
       <div class="c-type">EMAIL</div>
-      <div class="c-val">senator.cardinala@gmail.com</div>
+      <div class="c-val" id="em-val"></div>
     </a>
-    <a href="https://t.me/Cardinal_ZeroDay" target="_blank" class="c-card reveal">
+    <a href="https://t.me/Cardinal_ZeroDay" target="_blank" rel="noopener noreferrer" class="c-card reveal">
       <div class="corner tl"></div><div class="corner tr"></div>
       <div class="corner bl"></div><div class="corner br"></div>
       <div class="c-icon">✈</div>
@@ -898,6 +901,8 @@ const obs=new IntersectionObserver(entries=>{
   entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});
 },{threshold:.08});
 document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+// email obfuscation — decoded at runtime, not visible to crawlers
+(function(){var e=atob('c2VuYXRvci5jYXJkaW5hbGFAZ21haWwuY29t');var l=document.getElementById('em-link');var v=document.getElementById('em-val');if(l){l.href='mailto:'+e;}if(v){v.textContent=e;}})();
 </script>
 </body>
 </html>
