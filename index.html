@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SENATOR // RED TEAM AI SECURITY</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --red:#ff0030;--dred:#8b0000;--dimred:rgba(255,0,48,.12);
+  --bg:#060608;--bg2:#0a0b0f;--text:#c8c8d4;--green:#00ff41;
+  --mono:'Courier New',Courier,monospace
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);overflow-x:hidden}
+
+/* Scanlines */
+body::after{
+  content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px);
+  pointer-events:none;z-index:9999
+}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;width:100%;z-index:1000;
+  background:rgba(6,6,8,.92);border-bottom:1px solid rgba(255,0,48,.25);
+  backdrop-filter:blur(12px);padding:0 2.5rem;height:58px;
+  display:flex;align-items:center;justify-content:space-between
+}
+.nav-logo{font-size:1.1rem;color:var(--red);letter-spacing:5px;font-weight:700}
+.nav-logo small{color:var(--green);font-size:.6rem;letter-spacing:3px;margin-left:6px}
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{
+  color:rgba(200,200,212,.7);text-decoration:none;font-size:.7rem;
+  letter-spacing:2px;text-transform:uppercase;transition:color .25s
+}
+.nav-links a:hover{color:var(--red)}
+.nav-links a:hover::before{content:'// ';color:var(--red)}
+.nav-status{font-size:.65rem;color:var(--green);display:flex;align-items:center;gap:8px}
+.sdot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,65,.4)}50%{opacity:.6;box-shadow:0 0 0 6px rgba(0,255,65,0)}}
+
+/* ── HERO ── */
+#hero{
+  height:100vh;position:relative;display:flex;
+  align-items:center;justify-content:center;overflow:hidden
+}
+#matrixBg{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.04}
+#neuralBg{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#globeCanvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
+
+.hud-tl,.hud-tr{position:absolute;top:5rem;font-size:.6rem;line-height:2;z-index:5}
+.hud-tl{left:2.5rem;color:rgba(255,0,48,.55)}
+.hud-tr{right:2.5rem;color:rgba(0,255,65,.5);text-align:right}
+.hud-tr span{color:rgba(255,0,48,.7)}
+
+.hero-content{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;text-align:center;width:max-content;max-width:90vw}
+.hero-eyebrow{font-size:.65rem;letter-spacing:6px;color:rgba(255,0,48,.7);text-transform:uppercase;margin-bottom:1.2rem}
+.hero-name{
+  font-size:15vmin;font-weight:900;color:#000;
+  letter-spacing:.18em;text-transform:uppercase;line-height:1;white-space:nowrap;
+  text-shadow:0 0 6px #ff0030,0 0 14px #ff0030,0 0 28px rgba(255,0,48,.8),0 0 55px rgba(255,0,48,.45);
+  animation:glitch 10s infinite
+}
+@keyframes glitch{
+  0%,88%,100%{text-shadow:0 0 6px #ff0030,0 0 14px #ff0030,0 0 28px rgba(255,0,48,.8),0 0 55px rgba(255,0,48,.45);transform:none}
+  90%{text-shadow:-4px 0 var(--red),4px 0 cyan,0 0 14px #ff0030;transform:translate(-2px,0) skew(-.4deg)}
+  92%{text-shadow:4px 0 var(--red),-4px 0 cyan,0 0 14px #ff0030;transform:translate(2px,0) skew(.4deg)}
+  94%{text-shadow:0 0 6px #ff0030,0 0 14px #ff0030,0 0 28px rgba(255,0,48,.8),0 0 55px rgba(255,0,48,.45);transform:none}
+}
+.hero-div{width:120px;height:1px;background:linear-gradient(90deg,transparent,var(--red),transparent);margin:1.2rem auto}
+.hero-sub{font-size:clamp(.65rem,1.6vw,.85rem);letter-spacing:4px;color:rgba(200,200,212,.55);text-transform:uppercase}
+.hero-sub span{color:var(--red)}
+.hero-desc{margin-top:1.2rem;font-size:.75rem;color:rgba(200,200,212,.4);letter-spacing:2px;line-height:2}
+.scroll-hint{
+  position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  color:rgba(255,0,48,.4);font-size:.55rem;letter-spacing:3px;
+  animation:bob 2.2s infinite
+}
+@keyframes bob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
+.scroll-hint::after{content:'';display:block;width:18px;height:18px;border-right:1.5px solid var(--red);border-bottom:1.5px solid var(--red);transform:rotate(45deg)}
+
+/* ── SLOGAN ── */
+.slogan-wrap{text-align:center;padding:4rem 2rem 2rem;max-width:100%}
+.slogan-text{
+  position:relative;display:inline-block;
+  font-family:var(--mono);font-size:clamp(1.16rem,3.46vw,3.19rem);
+  font-weight:900;color:#000;letter-spacing:.18em;
+  text-transform:uppercase;white-space:nowrap;line-height:1;
+  text-shadow:0 0 6px #ff0030,0 0 14px #ff0030,0 0 28px rgba(255,0,48,.8),0 0 55px rgba(255,0,48,.45);
+}
+.slogan-text::before,.slogan-text::after{
+  content:attr(data-text);
+  position:absolute;left:0;top:0;width:100%;
+  font-weight:900;letter-spacing:.18em;color:#000;
+  text-transform:uppercase;white-space:nowrap;
+}
+.slogan-text::before{
+  text-shadow:-3px 0 #00ffff;
+  animation:slice-top 3s infinite linear;
+  clip-path:polygon(0 0,100% 0,100% 38%,0 38%);
+}
+.slogan-text::after{
+  text-shadow:3px 0 #ff0030;
+  animation:slice-bot 3s infinite linear;
+  clip-path:polygon(0 55%,100% 55%,100% 100%,0 100%);
+}
+@keyframes slice-top{
+  0%,89%,100%{transform:none;opacity:0}
+  90%{transform:translate(-8px,0);opacity:1}
+  91%{transform:translate(6px,0);opacity:1}
+  92%{transform:translate(-4px,0);opacity:.6}
+  93%{transform:translate(10px,0);opacity:1}
+  94%{transform:none;opacity:0}
+  96%{transform:translate(-6px,0);opacity:.8}
+  97%{transform:none;opacity:0}
+}
+@keyframes slice-bot{
+  0%,89%,100%{transform:none;opacity:0}
+  90%{transform:translate(10px,0);opacity:1}
+  91%{transform:translate(-8px,0);opacity:.7}
+  92%{transform:translate(5px,0);opacity:1}
+  93%{transform:translate(-3px,0);opacity:.5}
+  94%{transform:none;opacity:0}
+  96%{transform:translate(8px,0);opacity:.9}
+  97%{transform:none;opacity:0}
+}
+
+/* ── SECTIONS ── */
+.sec{padding:6rem 2rem;max-width:1100px;margin:0 auto}
+.sec-full{padding:6rem 0;border-top:1px solid rgba(255,0,48,.08);border-bottom:1px solid rgba(255,0,48,.08);background:rgba(255,0,48,.015)}
+.sec-hdr{display:flex;align-items:center;gap:1rem;margin-bottom:3rem}
+.sec-hdr.center{justify-content:center}
+.sec-num{color:var(--red);font-size:.65rem;letter-spacing:4px}
+.sec-title{font-size:clamp(1.4rem,3.5vw,2.2rem);color:#fff;letter-spacing:3px;text-transform:uppercase}
+.sec-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,0,48,.4),transparent)}
+
+/* ── ABOUT ── */
+#about{border-top:1px solid rgba(255,0,48,.08)}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start}
+.about-text p{font-size:.82rem;line-height:2;color:rgba(200,200,212,.75);margin-bottom:1rem}
+.about-text p .hl{color:var(--red)}
+.term{
+  background:rgba(8,9,12,.95);border:1px solid rgba(255,0,48,.2);border-radius:3px;
+  padding:1.2rem 1.5rem;position:relative
+}
+.term::before{content:'● ● ●';position:absolute;top:9px;left:14px;font-size:.55rem;color:rgba(255,0,48,.45);letter-spacing:5px}
+.term-body{margin-top:1.8rem;font-size:.72rem;line-height:2.1}
+.t-row{display:flex;gap:10px;flex-wrap:wrap}
+.tp{color:var(--red)}.tc{color:var(--green)}.to{color:rgba(200,200,212,.65)}
+.tcursor{display:inline-block;width:7px;height:13px;background:var(--green);animation:blink 1s infinite;vertical-align:middle;margin-left:2px}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+/* ── SKILLS ── */
+.skills-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:1.4rem;max-width:1100px;margin:0 auto;padding:0 2rem}
+.s-card{
+  background:rgba(10,11,15,.85);border:1px solid rgba(255,0,48,.12);
+  padding:1.5rem;position:relative;overflow:hidden;
+  transition:border-color .3s,transform .3s
+}
+.s-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--red);transform:scaleX(0);transform-origin:left;transition:transform .3s
+}
+.s-card:hover{border-color:rgba(255,0,48,.45);transform:translateY(-4px)}
+.s-card:hover::before{transform:scaleX(1)}
+.s-icon{font-size:1.4rem;margin-bottom:.8rem;color:var(--red)}
+.s-name{color:#fff;font-size:.82rem;letter-spacing:2px;text-transform:uppercase;margin-bottom:.5rem}
+.s-desc{color:rgba(200,200,212,.5);font-size:.7rem;line-height:1.9}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:1rem}
+.tag{
+  background:rgba(255,0,48,.07);border:1px solid rgba(255,0,48,.18);
+  color:var(--red);font-size:.58rem;padding:3px 8px;letter-spacing:1px;text-transform:uppercase
+}
+
+/* ── PORTFOLIO ── */
+#portfolio{border-top:1px solid rgba(255,0,48,.08)}
+.p-item{
+  border:1px solid rgba(255,0,48,.12);padding:2rem;margin-bottom:1.5rem;
+  position:relative;background:rgba(8,9,12,.5);transition:border-color .3s
+}
+.p-item:hover{border-color:rgba(255,0,48,.38)}
+.p-item::before{
+  content:attr(data-id);position:absolute;top:-1px;right:2rem;
+  background:var(--red);color:#000;font-size:.58rem;padding:2px 10px;letter-spacing:2px;font-weight:700
+}
+.p-title{color:#fff;font-size:.88rem;letter-spacing:2px;text-transform:uppercase;margin-bottom:.8rem}
+.p-title em{color:rgba(255,0,48,.7);font-style:normal;font-size:.65rem;margin-left:10px}
+.p-desc{color:rgba(200,200,212,.65);font-size:.73rem;line-height:2;margin-bottom:1rem}
+.p-badges{display:flex;flex-wrap:wrap;gap:8px}
+.badge{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,0,48,.05);border:1px solid rgba(255,0,48,.18);
+  padding:5px 12px;font-size:.62rem;letter-spacing:1px;color:rgba(200,200,212,.7)
+}
+.badge::before{content:'';display:block;width:5px;height:5px;background:var(--red);border-radius:50%;flex-shrink:0}
+
+/* ── CONTACT ── */
+#contact{border-top:1px solid rgba(255,0,48,.08);text-align:center}
+.c-sub{font-size:.7rem;color:rgba(200,200,212,.35);letter-spacing:2px;margin-top:-1rem;margin-bottom:2.5rem}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:560px;margin:0 auto}
+.c-card{
+  background:rgba(8,9,12,.9);border:1px solid rgba(255,0,48,.18);
+  padding:2rem;text-decoration:none;display:block;transition:all .3s;position:relative
+}
+.c-card:hover{border-color:var(--red);background:rgba(255,0,48,.04);transform:translateY(-4px)}
+.c-icon{font-size:1.8rem;margin-bottom:.8rem;color:var(--red)}
+.c-type{color:rgba(255,0,48,.7);font-size:.6rem;letter-spacing:3px;text-transform:uppercase;margin-bottom:.4rem}
+.c-val{color:#fff;font-size:.78rem;letter-spacing:1px;word-break:break-all}
+.c-card .corner{position:absolute;width:12px;height:12px}
+.c-card .tl{top:5px;left:5px;border-top:1px solid var(--red);border-left:1px solid var(--red)}
+.c-card .tr{top:5px;right:5px;border-top:1px solid var(--red);border-right:1px solid var(--red)}
+.c-card .bl{bottom:5px;left:5px;border-bottom:1px solid var(--red);border-left:1px solid var(--red)}
+.c-card .br{bottom:5px;right:5px;border-bottom:1px solid var(--red);border-right:1px solid var(--red)}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid rgba(255,0,48,.08);padding:2rem;text-align:center;font-size:.6rem;color:rgba(200,200,212,.25);letter-spacing:2px}
+footer b{color:var(--red)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:760px){
+  .about-grid{grid-template-columns:1fr}
+  .contact-grid{grid-template-columns:1fr}
+  .nav-links{gap:1.2rem}
+  .nav-links a{font-size:.65rem}
+  .nav-status{display:none}
+  .hud-tl,.hud-tr{display:none}
+}
+
+/* ── HERO DECORATIVE PANELS ── */
+.hud-panel{
+  position:absolute;z-index:6;font-size:.6rem;font-family:var(--mono);
+  pointer-events:none;letter-spacing:1.5px
+}
+.hud-panel-title{
+  color:rgba(255,0,48,.55);font-size:.55rem;letter-spacing:3px;
+  margin-bottom:.5rem;border-bottom:1px solid rgba(255,0,48,.15);
+  padding-bottom:.3rem
+}
+.hud-panel-row{
+  display:flex;justify-content:space-between;gap:1.2rem;
+  color:rgba(200,200,212,.45);line-height:1.9;white-space:nowrap
+}
+.hud-panel-row .val{color:rgba(200,200,212,.65)}
+.hud-panel-row .online{color:rgba(200,200,212,.65);text-shadow:none}
+
+/* targets — bottom-left */
+#panel-targets{left:2.5rem;bottom:6rem}
+/* ai matrix — bottom-right */
+#panel-ai{right:2.5rem;bottom:6rem;text-align:right}
+#panel-ai .hud-panel-row{flex-direction:row-reverse}
+
+/* hex ids — mid left */
+#panel-hex-l{left:2.5rem;top:30%;transform:translateY(-50%)}
+/* hex ids — mid right */
+#panel-hex-r{right:2.5rem;top:30%;transform:translateY(-50%);text-align:right}
+.hex-line{color:rgba(255,0,48,.55);font-size:.75rem;line-height:2;letter-spacing:1.5px}
+
+/* status matrix — left lower-mid */
+#panel-status{left:2.5rem;bottom:50%;transform:translateY(50%) translateY(4rem)}
+/* coords — right lower-mid */
+#panel-coords{right:2.5rem;bottom:50%;transform:translateY(50%) translateY(4rem);text-align:right}
+
+/* globe node markers */
+.globe-node{
+  position:absolute;z-index:6;pointer-events:none;
+  font-size:.52rem;letter-spacing:2px;color:rgba(255,0,48,.4);
+  display:flex;align-items:center;gap:6px
+}
+.globe-node .node-line{
+  display:block;background:rgba(255,0,48,.25);height:1px;width:30px;flex-shrink:0
+}
+.globe-node.node-n{top:calc(50% - 46%);left:50%;transform:translateX(-50%);flex-direction:column;align-items:center;gap:4px}
+.globe-node.node-n .node-line{width:1px;height:22px}
+.globe-node.node-s{bottom:calc(50% - 46%);left:50%;transform:translateX(-50%);flex-direction:column-reverse;align-items:center;gap:4px}
+.globe-node.node-s .node-line{width:1px;height:22px}
+.globe-node.node-w{left:calc(50% - 47%);top:42%;transform:translateY(-50%)}
+.globe-node.node-e{right:calc(50% - 47%);top:42%;transform:translateY(-50%);flex-direction:row-reverse}
+.node-label{text-align:center;line-height:1.5}
+
+/* hide all deco on small screens */
+@media(max-width:900px){
+  .hud-panel,.globe-node{display:none}
+}
+
+/* Reveal animation */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- Matrix BG canvas -->
+<canvas id="neuralBg"></canvas>
+<canvas id="matrixBg"></canvas>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-logo">SENATOR <small>// ONLINE</small></div>
+  <ul class="nav-links">
+    <li><a href="#about">ОБО МНЕ</a></li>
+    <li><a href="#skills">НАВЫКИ</a></li>
+    <li><a href="#portfolio">ПОРТФОЛИО</a></li>
+    <li><a href="#contact">КОНТАКТ</a></li>
+  </ul>
+  <div class="nav-status"><div class="sdot"></div>СИСТЕМА АКТИВНА</div>
+</nav>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <!-- HUD overlays -->
+  <div class="hud-tl">
+    <div>// THREAT LEVEL: MAXIMUM</div>
+    <div>// CLEARANCE: TOP SECRET</div>
+    <div>// LOCATION: ENCRYPTED</div>
+    <div id="hdt">// 0000-00-00 00:00:00</div>
+  </div>
+  <div class="hud-tr">
+    <div>TARGETS SCANNED: <span id="sc">0</span></div>
+    <div>VULNS FOUND: <span id="vc">0</span></div>
+    <div>AI MODELS TESTED: <span id="ac">0</span></div>
+    <div>STATUS: OPERATIONAL</div>
+  </div>
+
+  <canvas id="globeCanvas"></canvas>
+
+  <!-- Radar HUD -->
+  <!-- Hero text -->
+  <div class="hero-content">
+    <div class="hero-eyebrow">// RED TEAM OPERATOR //</div>
+    <h1 class="hero-name">SENATOR</h1>
+    <div class="hero-div"></div>
+    <div class="hero-sub">
+      <span>CYBERSECURITY</span>&nbsp; · &nbsp;<span>AI ENGINEERING</span>&nbsp; · &nbsp;<span>LLM TESTING</span>
+    </div>
+    <div class="hero-desc">
+      Специалист по тестированию безопасности веб-систем<br>
+      и оценке моделей искусственного интеллекта
+    </div>
+  </div>
+
+  <div class="scroll-hint">SCROLL DOWN</div>
+
+  <!-- ── ACTIVE TARGETS (bottom-left) ── -->
+  <div class="hud-panel" id="panel-targets">
+    <div class="hud-panel-title">[ ACTIVE TARGETS ]</div>
+    <div class="hud-panel-row"><span>MOSCOW</span><span class="val">55.7558N</span></div>
+    <div class="hud-panel-row"><span>SAO PAULO</span><span class="val">23.5505S</span></div>
+    <div class="hud-panel-row"><span>DOHA</span><span class="val">25.2854N</span></div>
+    <div class="hud-panel-row"><span>BERLIN</span><span class="val">52.5200N</span></div>
+    <div class="hud-panel-row"><span>TOKYO</span><span class="val">35.6762N</span></div>
+  </div>
+
+  <!-- ── AI TEST MATRIX (bottom-right) ── -->
+  <div class="hud-panel" id="panel-ai">
+    <div class="hud-panel-title">[ AI TEST MATRIX ]</div>
+    <div class="hud-panel-row"><span class="online">ONLINE</span><span>GPT-5</span></div>
+    <div class="hud-panel-row"><span class="online">ONLINE</span><span>CLAUDE</span></div>
+    <div class="hud-panel-row"><span class="online">ONLINE</span><span>GEMINI</span></div>
+    <div class="hud-panel-row"><span class="online">ONLINE</span><span>DEEPSEEK</span></div>
+    <div class="hud-panel-row"><span class="online">ONLINE</span><span>MISTRAL</span></div>
+  </div>
+
+  <!-- ── HEX IDs LEFT ── -->
+  <div class="hud-panel" id="panel-hex-l">
+    <div class="hex-line">0x7A4F12B9</div>
+    <div class="hex-line">0xA1D47EE3</div>
+    <div class="hex-line">0x3C9F88AA</div>
+    <div class="hex-line">0xD01E6721</div>
+    <div class="hex-line">0xE44B91F0</div>
+  </div>
+
+  <!-- ── HEX IDs RIGHT ── -->
+  <div class="hud-panel" id="panel-hex-r">
+    <div class="hex-line">0xB92F4A17</div>
+    <div class="hex-line">0xE3EE7D41</div>
+    <div class="hex-line">0xAA889F3C</div>
+    <div class="hex-line">0x21671ED0</div>
+    <div class="hex-line">0xF0914BE4</div>
+  </div>
+
+  <!-- ── STATUS MATRIX (left mid-lower) ── -->
+  <div class="hud-panel" id="panel-status">
+    <div class="hud-panel-title">[ SYS DIAGNOSTIC ]</div>
+    <div class="hud-panel-row"><span>AUTH</span><span class="online">[OK]</span></div>
+    <div class="hud-panel-row"><span>NETWORK</span><span class="online">[OK]</span></div>
+    <div class="hud-panel-row"><span>DATABASE</span><span class="online">[OK]</span></div>
+    <div class="hud-panel-row"><span>AI CORE</span><span class="online">[OK]</span></div>
+    <div class="hud-panel-row"><span>SECURITY</span><span class="online">[OK]</span></div>
+  </div>
+
+  <!-- ── COORDINATES (right mid-lower) ── -->
+  <div class="hud-panel" id="panel-coords">
+    <div class="hud-panel-title">[ COORDINATES ]</div>
+    <div class="hud-panel-row"><span>X</span><span class="val">127.44</span></div>
+    <div class="hud-panel-row"><span>Y</span><span class="val">943.21</span></div>
+    <div class="hud-panel-row"><span>Z</span><span class="val">002.91</span></div>
+    <div style="height:.4rem"></div>
+    <div class="hud-panel-row"><span>LAT</span><span class="val">25.285</span></div>
+    <div class="hud-panel-row"><span>LON</span><span class="val">51.531</span></div>
+  </div>
+
+  <!-- ── GLOBE NODE MARKERS ── -->
+  <div class="globe-node node-n">
+    <span class="node-line"></span>
+    <span class="node-label">NORTH NODE<br>SECTOR-01</span>
+  </div>
+  <div class="globe-node node-s">
+    <span class="node-line"></span>
+    <span class="node-label">SOUTH NODE<br>SECTOR-04</span>
+  </div>
+  <div class="globe-node node-w">
+    <span class="node-line"></span>
+    <span class="node-label">WEST NODE<br>SECTOR-02</span>
+  </div>
+  <div class="globe-node node-e">
+    <span class="node-line"></span>
+    <span class="node-label">EAST NODE<br>SECTOR-03</span>
+  </div>
+
+</section>
+
+<!-- ── ABOUT ── -->
+<section id="about" class="sec">
+  <div class="sec-hdr">
+    <span class="sec-num">01 //</span>
+    <h2 class="sec-title">ОБО МНЕ</h2>
+    <div class="sec-line"></div>
+  </div>
+  <div class="about-grid">
+    <div class="about-text">
+      <p>Привет. Я <span class="hl">SENATOR</span> — специалист по кибербезопасности и AI-инженер с фокусом на <span class="hl">red team операциях</span> и тестировании систем на основе больших языковых моделей.</p>
+      <p>Работаю на стыке двух дисциплин: <span class="hl">пентест веб-приложений</span> и <span class="hl">систематическое тестирование ИИ-продуктов</span>. Нахожу слабые места там, где другие видят только рабочий функционал.</p>
+      <p>Разработал методологию <span class="hl">трёхуровневой оценки ИИ-систем</span>: от модульных тестов до A/B-тестирования с реальными пользователями. Использую LLM-as-judge, трассировку через LangSmith и синтетическую генерацию тестовых данных.</p>
+      <p>Каждая система имеет уязвимости. <span class="hl">Моя задача — найти их первым.</span></p>
+    </div>
+    <div class="term reveal">
+      <div class="term-body">
+        <div class="t-row"><span class="tp">$</span><span class="tc">whoami</span></div>
+        <div class="t-row"><span class="to">→ SENATOR | Red Team Operator</span></div>
+        <br>
+        <div class="t-row"><span class="tp">$</span><span class="tc">cat skills.txt</span></div>
+        <div class="t-row"><span class="to">→ Web Penetration Testing</span></div>
+        <div class="t-row"><span class="to">→ AI / LLM Security Red Teaming</span></div>
+        <div class="t-row"><span class="to">→ AI Evaluation Systems Design</span></div>
+        <div class="t-row"><span class="to">→ LLM Prompt Engineering</span></div>
+        <div class="t-row"><span class="to">→ Fine-tuning & RAG Pipelines</span></div>
+        <br>
+        <div class="t-row"><span class="tp">$</span><span class="tc">status</span></div>
+        <div class="t-row"><span style="color:var(--green)">→ [ONLINE] Available for projects</span></div>
+        <br>
+        <div class="t-row"><span class="tp">$</span><span class="tcursor"></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SKILLS ── -->
+<div id="skills" class="sec-full">
+  <div style="max-width:1100px;margin:0 auto;padding:0 2rem 3rem">
+    <div class="sec-hdr">
+      <span class="sec-num">02 //</span>
+      <h2 class="sec-title">НАВЫКИ</h2>
+      <div class="sec-line"></div>
+    </div>
+  </div>
+  <div class="skills-grid">
+    <div class="s-card reveal">
+      <div class="s-icon">⚔</div>
+      <div class="s-name">Web Penetration Testing</div>
+      <div class="s-desc">Выявление уязвимостей веб-приложений методами красной команды. OWASP Top 10, SQL-инъекции, XSS, SSRF и нестандартные векторы атак. Полная отчётность.</div>
+      <div class="tags"><span class="tag">OWASP</span><span class="tag">Burp Suite</span><span class="tag">XSS</span><span class="tag">SQLi</span><span class="tag">SSRF</span></div>
+    </div>
+    <div class="s-card reveal">
+      <div class="s-icon">◈</div>
+      <div class="s-name">AI / LLM Security</div>
+      <div class="s-desc">Тестирование безопасности LLM-систем: prompt injection, jailbreaking, утечки данных через модель, обход safety guardrails и контроль агентов.</div>
+      <div class="tags"><span class="tag">Prompt Injection</span><span class="tag">Red Teaming</span><span class="tag">Jailbreak</span><span class="tag">Agent Security</span></div>
+    </div>
+    <div class="s-card reveal">
+      <div class="s-icon">⬡</div>
+      <div class="s-name">AI Evaluation Systems</div>
+      <div class="s-desc">Построение 3-уровневых систем оценки ИИ: unit-тесты (assertions), human+model evaluation (LLM-as-judge), A/B-тестирование в production.</div>
+      <div class="tags"><span class="tag">LangSmith</span><span class="tag">LangChain</span><span class="tag">pytest</span><span class="tag">Metabase</span></div>
+    </div>
+    <div class="s-card reveal">
+      <div class="s-icon">⊞</div>
+      <div class="s-name">LLM Engineering</div>
+      <div class="s-desc">Проектирование промптов, RAG-архитектуры, fine-tuning моделей, синтетическая генерация данных для обучения и тестирования AI-продуктов.</div>
+      <div class="tags"><span class="tag">RAG</span><span class="tag">Fine-tuning</span><span class="tag">Prompt Eng.</span><span class="tag">Synthetic Data</span></div>
+    </div>
+    <div class="s-card reveal">
+      <div class="s-icon">⊕</div>
+      <div class="s-name">Red Team Operations</div>
+      <div class="s-desc">Моделирование атак на AI-системы и веб-инфраструктуру. Adversarial testing, threat modeling, эксплуатация бизнес-логики, детальная отчётность.</div>
+      <div class="tags"><span class="tag">Adversarial</span><span class="tag">Threat Model</span><span class="tag">Exploit Dev</span></div>
+    </div>
+    <div class="s-card reveal">
+      <div class="s-icon">◎</div>
+      <div class="s-name">Trace Analysis & Debug</div>
+      <div class="s-desc">Трассировка AI-диалогов, анализ логов, кастомные дашборды мониторинга, разметка данных, выявление паттернов сбоев в LLM-системах.</div>
+      <div class="tags"><span class="tag">LangSmith</span><span class="tag">Shiny/Python</span><span class="tag">Metabase</span><span class="tag">Lilac</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PORTFOLIO ── -->
+<section id="portfolio" class="sec">
+  <div class="sec-hdr">
+    <span class="sec-num">03 //</span>
+    <h2 class="sec-title">ПОРТФОЛИО</h2>
+    <div class="sec-line"></div>
+  </div>
+
+  <div class="p-item reveal" data-id="PROJ-001">
+    <div class="p-title">Система трёхуровневой оценки ИИ-продуктов <em>// AI EVALUATION</em></div>
+    <div class="p-desc">Разработка комплексной системы тестирования LLM-ассистента. Система охватывает три уровня: автоматические unit-тесты (assertion-based, аналог pytest), оценку человеком и LLM-критиком с трассировкой через LangSmith, и A/B-эксперименты с реальными пользователями. Включает кастомные инструменты разметки данных (Shiny for Python) и дашборды мониторинга в Metabase. Тесты покрывают сотни сценариев взаимодействия пользователей с AI-системой.</div>
+    <div class="p-badges">
+      <span class="badge">Level 1: Unit Tests (assertions)</span>
+      <span class="badge">Level 2: Human + LLM-as-Judge</span>
+      <span class="badge">Level 3: A/B Testing</span>
+      <span class="badge">LangSmith / LangChain</span>
+      <span class="badge">Metabase Dashboard</span>
+      <span class="badge">Shiny for Python</span>
+    </div>
+  </div>
+
+  <div class="p-item reveal" data-id="PROJ-002">
+    <div class="p-title">Синтетическая генерация тест-кейсов для LLM <em>// DATA SYNTHESIS</em></div>
+    <div class="p-desc">Методология и инструментарий для автоматической генерации синтетических тестовых данных с использованием LLM. Промпты генерируют разнообразные пользовательские сценарии взаимодействия с AI-системами. Автоматическая фильтрация некачественных примеров через assertions и модель-критик. Результирующие данные используются как для unit-тестов, так и для fine-tuning.</div>
+    <div class="p-badges">
+      <span class="badge">LLM-as-Generator</span>
+      <span class="badge">Assertion Filtering</span>
+      <span class="badge">Fine-tuning Dataset</span>
+      <span class="badge">Quality Control Pipeline</span>
+    </div>
+  </div>
+
+  <div class="p-item reveal" data-id="PROJ-003">
+    <div class="p-title">Web Application Penetration Testing <em>// RED TEAM</em></div>
+    <div class="p-desc">Проведение комплексного тестирования безопасности веб-приложений. Выявление уязвимостей по OWASP Top 10, бизнес-логических ошибок и нестандартных векторов атак. Тестирование аутентификации, авторизации, API-эндпоинтов, обработки пользовательского ввода. Полная отчётность с PoC и рекомендациями по устранению.</div>
+    <div class="p-badges">
+      <span class="badge">OWASP Top 10</span>
+      <span class="badge">Business Logic</span>
+      <span class="badge">API Security</span>
+      <span class="badge">Auth Bypass</span>
+      <span class="badge">PoC Reporting</span>
+    </div>
+  </div>
+
+  <div class="p-item reveal" data-id="PROJ-004">
+    <div class="p-title">LLM Red Teaming & Adversarial Testing <em>// AI SECURITY</em></div>
+    <div class="p-desc">Тестирование безопасности LLM-приложений: поиск prompt injection уязвимостей, обход guardrails и content filters, тестирование на утечку системных промптов и конфиденциальных данных из контекста. Разработка adversarial test-suite для RAG-систем, агентов с function calling и multi-turn диалогов.</div>
+    <div class="p-badges">
+      <span class="badge">Prompt Injection</span>
+      <span class="badge">Jailbreaking</span>
+      <span class="badge">Data Leakage Tests</span>
+      <span class="badge">RAG Security</span>
+      <span class="badge">Agent Red Team</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── SLOGAN ── -->
+<div class="slogan-wrap reveal">
+  <div class="slogan-text" data-text="ТВОЯ СЕТЬ — МОЙ ПОЛИГОН">ТВОЯ СЕТЬ — МОЙ ПОЛИГОН</div>
+</div>
+
+<!-- ── CONTACT ── -->
+<section id="contact" class="sec">
+  <div class="sec-hdr center">
+    <span class="sec-num">04 //</span>
+    <h2 class="sec-title">КОНТАКТ</h2>
+    <div class="sec-line"></div>
+  </div>
+  <div class="contact-grid">
+    <a href="mailto:senator.cardinala@gmail.com" class="c-card reveal">
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="c-icon">✉</div>
+      <div class="c-type">EMAIL</div>
+      <div class="c-val">senator.cardinala@gmail.com</div>
+    </a>
+    <a href="https://t.me/Cardinal_ZeroDay" target="_blank" class="c-card reveal">
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="c-icon">✈</div>
+      <div class="c-type">TELEGRAM</div>
+      <div class="c-val">@Cardinal_ZeroDay</div>
+    </a>
+  </div>
+  <p class="c-sub" style="text-align:center;margin-top:2rem">// ЛИЧНЫЙ КАНАЛ СВЯЗИ ГОТОВ К РАБОТЕ</p>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div style="margin-bottom:.5rem">▸ <b>SENATOR</b> // <span style="color:var(--red)">RED TEAM AI SECURITY</span> ◂</div>
+  <div>[ UNAUTHORIZED ACCESS IS PROHIBITED ] // ALL SYSTEMS MONITORED</div>
+</footer>
+
+<script>
+// ── DATETIME ──
+(function tick(){
+  const d=new Date();
+  document.getElementById('hdt').textContent='// '+d.toISOString().slice(0,19).replace('T',' ');
+  setTimeout(tick,1000);
+})();
+
+// ── COUNTERS ──
+function counter(id,target,ms){
+  const el=document.getElementById(id);
+  let v=0,step=target/(ms/40);
+  const t=setInterval(()=>{v+=step;if(v>=target){el.textContent=target;clearInterval(t);}else el.textContent=Math.floor(v);},40);
+}
+setTimeout(()=>{counter('sc',1337,2200);counter('vc',248,2600);counter('ac',89,1900);},600);
+
+// ── MATRIX BACKGROUND ──
+const mCv=document.getElementById('matrixBg');
+const mCx=mCv.getContext('2d');
+function rsm(){mCv.width=window.innerWidth;mCv.height=window.innerHeight;}
+rsm();window.addEventListener('resize',rsm);
+const CHARS='01アイウエオHACKERSECURITYABCDEF01234956ХАКЕР!@#';
+let cols=Math.floor(window.innerWidth/18),drops=Array(cols).fill(1);
+function mDraw(){
+  mCx.fillStyle='rgba(6,6,8,.05)';
+  mCx.fillRect(0,0,mCv.width,mCv.height);
+  mCx.fillStyle='#ff0030';mCx.font='11px Courier New';
+  for(let i=0;i<drops.length;i++){
+    mCx.fillText(CHARS[Math.floor(Math.random()*CHARS.length)],i*18,drops[i]*18);
+    if(drops[i]*18>mCv.height&&Math.random()>.975)drops[i]=0;
+    drops[i]++;
+  }
+  requestAnimationFrame(mDraw);
+}
+mDraw();
+
+// ── CYBERPUNK GRID BACKGROUND ──
+(function(){
+  const cv=document.getElementById('neuralBg');
+  const cx=cv.getContext('2d');
+  let W,H,offset=0,rain=[],scrollFade=1;
+  window.addEventListener('scroll',()=>{
+    scrollFade=Math.max(0,1-window.scrollY/400);
+  });
+
+  function resize(){
+    W=cv.width=window.innerWidth;
+    H=cv.height=window.innerHeight;
+    initRain();
+  }
+
+  // Neon rain streaks on sides
+  function initRain(){
+    rain=[];
+    for(let i=0;i<80;i++){
+      rain.push({
+        x:Math.random()*W,
+        y:Math.random()*H,
+        len:30+Math.random()*120,
+        speed:4+Math.random()*8,
+        alpha:0.08+Math.random()*0.18,
+        w:Math.random()<0.15?1.5:0.5
+      });
+    }
+  }
+
+  function drawGrid(){
+    const vx=W/2, vy=H*0.52; // vanishing point
+    const horizon=H*0.52;
+
+    // Horizon glow — fades on scroll
+    if(scrollFade>0){
+      const hg=cx.createLinearGradient(0,horizon-80,0,horizon+60);
+      hg.addColorStop(0,'transparent');
+      hg.addColorStop(0.5,`rgba(255,0,48,${0.18*scrollFade})`);
+      hg.addColorStop(1,'transparent');
+      cx.fillStyle=hg;
+      cx.fillRect(0,horizon-80,W,140);
+    }
+
+    // Horizontal lines scrolling toward viewer
+    const HLINES=18;
+    const perspective=1.8;
+    for(let i=0;i<HLINES;i++){
+      const t=((i/HLINES)+offset/HLINES)%1;
+      const ease=Math.pow(t,perspective);
+      const y=horizon+ease*(H-horizon);
+      if(y>H)continue;
+      const alpha=0.04+ease*0.22;
+      const w=0.4+ease*1.2;
+      cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);
+      cx.strokeStyle=`rgba(255,0,48,${alpha})`;
+      cx.lineWidth=w;cx.stroke();
+    }
+
+    // Vertical lines converging to vanishing point
+    const VLINES=28;
+    for(let i=0;i<=VLINES;i++){
+      const fx=(i/VLINES)*W;
+      const alpha=0.06+0.1*(1-Math.abs(i/VLINES-0.5)*2);
+      cx.beginPath();
+      cx.moveTo(vx+(fx-vx)*0.01,horizon);
+      cx.lineTo(fx,H);
+      cx.strokeStyle=`rgba(255,0,48,${alpha})`;
+      cx.lineWidth=0.6;cx.stroke();
+    }
+
+    // Side vertical neon pillars
+    [-1,1].forEach(side=>{
+      const px=W/2+side*(W*0.42);
+      const pg=cx.createLinearGradient(px,0,px,H);
+      pg.addColorStop(0,'transparent');
+      pg.addColorStop(0.4,`rgba(255,0,80,0.25)`);
+      pg.addColorStop(0.6,`rgba(255,0,80,0.25)`);
+      pg.addColorStop(1,'transparent');
+      cx.beginPath();cx.moveTo(px,0);cx.lineTo(px,H);
+      cx.strokeStyle=pg;cx.lineWidth=1.2;cx.stroke();
+
+      // Glow around pillar
+      const glowG=cx.createLinearGradient(px-18,0,px+18,0);
+      glowG.addColorStop(0,'transparent');
+      glowG.addColorStop(0.5,`rgba(255,0,48,0.07)`);
+      glowG.addColorStop(1,'transparent');
+      cx.fillStyle=glowG;cx.fillRect(px-18,0,36,H);
+    });
+  }
+
+  function drawRain(){
+    rain.forEach(r=>{
+      r.y+=r.speed;
+      if(r.y-r.len>H) r.y=-r.len;
+      // Fade out near center
+      const dx=r.x-W/2;
+      const centerFade=Math.min(1,Math.abs(dx)/(W*0.28));
+      if(centerFade<0.1)return;
+      const rg=cx.createLinearGradient(r.x,r.y-r.len,r.x,r.y);
+      rg.addColorStop(0,'transparent');
+      rg.addColorStop(1,`rgba(255,20,60,${r.alpha*centerFade})`);
+      cx.beginPath();cx.moveTo(r.x,r.y-r.len);cx.lineTo(r.x,r.y);
+      cx.strokeStyle=rg;cx.lineWidth=r.w;cx.stroke();
+    });
+  }
+
+  function draw(){
+    cx.clearRect(0,0,W,H);
+    offset=(offset+0.012)%1;
+
+    drawGrid();
+    drawRain();
+
+    // Top dark gradient (sky)
+    const sky=cx.createLinearGradient(0,0,0,H*0.5);
+    sky.addColorStop(0,'rgba(6,6,8,0.95)');
+    sky.addColorStop(0.7,'rgba(6,6,8,0.5)');
+    sky.addColorStop(1,'transparent');
+    cx.fillStyle=sky;cx.fillRect(0,0,W,H*0.5);
+
+    // Globe center mask
+    const gR=Math.min(W,H)*0.495;
+    const mask=cx.createRadialGradient(W/2,H/2,gR*0.28,W/2,H/2,gR*0.68);
+    mask.addColorStop(0,'rgba(6,6,8,0.96)');
+    mask.addColorStop(1,'rgba(6,6,8,0)');
+    cx.fillStyle=mask;cx.fillRect(0,0,W,H);
+
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  window.addEventListener('resize',resize);
+  draw();
+})();
+
+// ── GLOBE ──
+const gCv=document.getElementById('globeCanvas');
+const gCx=gCv.getContext('2d');
+let gRot=0;
+function rsGlobe(){
+  gCv.width=window.innerWidth;
+  gCv.height=window.innerHeight;
+}
+rsGlobe();window.addEventListener('resize',rsGlobe);
+
+const CITIES=[
+  {lat:55.7,lng:37.6},{lat:40.7,lng:-74},{lat:51.5,lng:-.1},
+  {lat:35.7,lng:139.7},{lat:39.9,lng:116.4},{lat:48.8,lng:2.3},
+  {lat:37.4,lng:-122.1},{lat:1.3,lng:103.8},{lat:-33.9,lng:151.2},
+  {lat:28.6,lng:77.2},{lat:19.4,lng:-99.1},{lat:-23.5,lng:-46.6},
+  {lat:50.4,lng:30.5},{lat:41.0,lng:29.0},{lat:25.2,lng:55.3}
+];
+
+
+function ll2xyz(lat,lng){
+  const r=lat*Math.PI/180,l=lng*Math.PI/180;
+  return{x:Math.cos(r)*Math.cos(l),y:Math.sin(r),z:Math.cos(r)*Math.sin(l)};
+}
+function proj(x,y,z,rot,cx,cy,r){
+  const c=Math.cos(rot),s=Math.sin(rot);
+  const rx=x*c-z*s,rz=x*s+z*c;
+  const sc=r/(1.7+rz);
+  return{px:cx+rx*sc*1.5,py:cy-y*sc*1.5,z:rz,vis:rz>-.4};
+}
+
+function drawGlobe(){
+  const W=gCv.width,H=gCv.height,cx=W/2,cy=H/2;
+  const r=Math.min(W,H)*.495;
+  gCx.clearRect(0,0,W,H);
+  gRot+=.003;
+
+  // Deep outer glow
+  const ag3=gCx.createRadialGradient(cx,cy,r*.85,cx,cy,r*1.5);
+  ag3.addColorStop(0,'rgba(180,0,30,.1)');ag3.addColorStop(1,'transparent');
+  gCx.fillStyle=ag3;gCx.beginPath();gCx.arc(cx,cy,r*1.5,0,Math.PI*2);gCx.fill();
+
+  // Mid atmosphere
+  const ag2=gCx.createRadialGradient(cx,cy,r*.7,cx,cy,r*1.08);
+  ag2.addColorStop(0,'rgba(255,0,48,.14)');ag2.addColorStop(1,'transparent');
+  gCx.fillStyle=ag2;gCx.beginPath();gCx.arc(cx,cy,r*1.08,0,Math.PI*2);gCx.fill();
+
+  // Globe surface subtle fill
+  const surf=gCx.createRadialGradient(cx-r*.2,cy-r*.2,0,cx,cy,r);
+  surf.addColorStop(0,'rgba(255,0,48,.03)');surf.addColorStop(1,'rgba(0,0,0,0)');
+  gCx.fillStyle=surf;gCx.beginPath();gCx.arc(cx,cy,r,0,Math.PI*2);gCx.fill();
+
+  // Edge ring
+  gCx.beginPath();gCx.arc(cx,cy,r,0,Math.PI*2);
+  gCx.strokeStyle='rgba(255,30,30,.45)';gCx.lineWidth=1.5;gCx.stroke();
+  // Soft outer ring
+  gCx.beginPath();gCx.arc(cx,cy,r+4,0,Math.PI*2);
+  gCx.strokeStyle='rgba(255,0,48,.1)';gCx.lineWidth=5;gCx.stroke();
+
+  // Clip all grid/city drawing strictly inside globe circle
+  gCx.save();
+  gCx.beginPath();gCx.arc(cx,cy,r,0,Math.PI*2);gCx.clip();
+
+  // Grid lines
+  function gridLine(pts){
+    let first=true;
+    gCx.beginPath();
+    pts.forEach(([x,y,z])=>{
+      const p=proj(x,y,z,gRot,cx,cy,r);
+      if(p.vis){
+        const fade=.35+(p.z+1)*.3;
+        first?gCx.moveTo(p.px,p.py):gCx.lineTo(p.px,p.py);
+        first=false;
+      } else {
+        if(!first){
+          gCx.strokeStyle='rgba(255,0,48,.3)';gCx.lineWidth=.7;gCx.stroke();
+          gCx.beginPath();
+        }
+        first=true;
+      }
+    });
+    gCx.strokeStyle='rgba(255,0,48,.3)';gCx.lineWidth=.7;gCx.stroke();
+  }
+  for(let lat=-80;lat<=80;lat+=18){
+    const y=Math.sin(lat*Math.PI/180),cl=Math.cos(lat*Math.PI/180);
+    const pts=[];
+    for(let lng=0;lng<=365;lng+=3)pts.push([cl*Math.cos(lng*Math.PI/180),y,cl*Math.sin(lng*Math.PI/180)]);
+    gridLine(pts);
+  }
+  for(let lng=0;lng<360;lng+=18){
+    const pts=[];
+    for(let lat=-90;lat<=90;lat+=3){
+      const y=Math.sin(lat*Math.PI/180),cl=Math.cos(lat*Math.PI/180);
+      pts.push([cl*Math.cos(lng*Math.PI/180),y,cl*Math.sin(lng*Math.PI/180)]);
+    }
+    gridLine(pts);
+  }
+
+
+  // City dots
+  CITIES.forEach(c=>{
+    const xyz=ll2xyz(c.lat,c.lng),p=proj(xyz.x,xyz.y,xyz.z,gRot,cx,cy,r);
+    if(!p.vis)return;
+    const br=.5+p.z*.5;
+    // Outer glow
+    gCx.beginPath();gCx.arc(p.px,p.py,8,0,Math.PI*2);
+    gCx.fillStyle=`rgba(255,0,48,${br*.08})`;gCx.fill();
+    // Core dot
+    gCx.beginPath();gCx.arc(p.px,p.py,2.5,0,Math.PI*2);
+    gCx.fillStyle=`rgba(255,160,160,${br*.9})`;gCx.fill();
+    // Pulse ring
+    const ring=5+(Math.sin(Date.now()*.003+c.lat)+1)*3.5;
+    gCx.beginPath();gCx.arc(p.px,p.py,ring,0,Math.PI*2);
+    gCx.strokeStyle=`rgba(255,0,48,${br*.35})`;gCx.lineWidth=1;gCx.stroke();
+  });
+
+  gCx.restore();
+
+  requestAnimationFrame(drawGlobe);
+}
+drawGlobe();
+
+// ── REVEAL ON SCROLL ──
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});
+},{threshold:.08});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>
