@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 // ACCESS DENIED — SENATOR</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--red:#ff0030;--mono:'Courier New',Courier,monospace}
+html,body{height:100%;background:#060608;color:#c8c8d4;font-family:var(--mono);overflow:hidden}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px);pointer-events:none;z-index:9999}
+canvas{position:fixed;inset:0;z-index:0}
+.wrap{position:relative;z-index:10;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;text-align:center;padding:2rem}
+.code{font-size:clamp(5rem,20vw,12rem);font-weight:900;color:#ff0030;line-height:1;text-shadow:0 0 8px #ff0030,0 0 20px #ff0030,0 0 50px rgba(255,0,48,.5);letter-spacing:.05em}
+.label{font-size:clamp(.8rem,2.5vw,1.1rem);letter-spacing:.3em;color:rgba(200,200,212,.6);text-transform:uppercase}
+.msg{font-size:clamp(.65rem,1.8vw,.9rem);letter-spacing:.2em;color:rgba(255,0,48,.7);text-transform:uppercase;margin-top:.5rem}
+.btn{margin-top:2rem;padding:.7rem 2rem;border:1px solid rgba(255,0,48,.5);background:transparent;color:#ff0030;font-family:var(--mono);font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:all .3s}
+.btn:hover{background:rgba(255,0,48,.1);border-color:#ff0030;text-shadow:0 0 8px #ff0030;box-shadow:0 0 12px rgba(255,0,48,.3)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.cursor{display:inline-block;animation:blink 1s step-end infinite}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="wrap">
+  <div class="code">404</div>
+  <div class="label">// ACCESS DENIED</div>
+  <div class="msg">&#91; SECTOR NOT FOUND — COORDINATES INVALID &#93;<span class="cursor">_</span></div>
+  <a class="btn" href="/">&#9658; RETURN TO BASE</a>
+</div>
+<script>
+const cv=document.getElementById('c'),cx=cv.getContext('2d');
+let W,H,drops=[];
+function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;drops=Array.from({length:Math.floor(W/14)},()=>Math.random()*H/16|0)}
+resize();window.addEventListener('resize',resize);
+const chars='01アイウエオカキクケコSENATOR';
+function frame(){
+  cx.fillStyle='rgba(6,6,8,.07)';cx.fillRect(0,0,W,H);
+  cx.fillStyle='rgba(255,0,48,.45)';cx.font='12px monospace';
+  drops.forEach((y,i)=>{
+    cx.fillText(chars[Math.random()*chars.length|0],i*14,y*16);
+    if(y*16>H&&Math.random()>.97)drops[i]=0;else drops[i]++;
+  });
+  requestAnimationFrame(frame);
+}
+frame();
+</script>
+</body>
+</html>
